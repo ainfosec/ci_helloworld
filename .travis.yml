@@ -1,0 +1,478 @@
+#
+# CI Hello World
+#
+# Copyright (C) 2017 Assured Information Security, Inc.
+# Author: Rian Quinn        <quinnr@ainfosec.com>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+#
+# Configuration
+#
+language: cpp
+dist: trusty
+
+#
+# Tokens
+#
+env:
+  global:
+    secure: "TgRM9CGlY1bAVGOQ9KJ35P5tTCu16aOm4Tf9BW24bwwUmBFawz1sQGOUyJq30OzivtMfLTVi9TfObH2kq5uUFnakX6PkCVwxOZLZPO4yKcum2flTnzX5iZsqGxZb0vDT49QQWvJi1HbKsro5ciEuWVXtV66AX6wetS+fp8A4g+ToQkusr1s5ugYq5yc3HKFcwrlNSPdyn7FETQrrFr8kgO/LiBLMRBpEO1zo9s23h4MjSsBr2u9AvE2QJ2C88Vu5yTI8TWNQY9nZV3c5lgwSUXk+y+IZQTmW0LXALglNKbCRftxgjJM6zypw0h9iXSGc+3rVkuVwQfOrFdxyAOr2jBiKbFYB3mxNNc10XZtvRnwn+eEcsXwQ4Hi9jhqN13LciZcoJpKnL9fQp3dUeBehYkCyUQnK6oRxS/ceYQJB05y9IpZq/XnjIL9uXIie7kYtRMNVwVgLmr+cMt5QvJgkiLAhAhLjwhmEt7KX+UQ4x4jDxMJ8NV0azEG4nFr6HvTWHc9PgPjM83HxX+7CGAZy5da6zmZe+FOTlG6lOwCDROqDmmlGPR9e7hZ+JtaMHRZlCN90jiJ7Shszrnwmjv0CJ0WHbCSGreRl00039GuwPNRvqgsgYxrVfYQ0Z6CbA9E1qlluwV02KWJdMk1pcm//KdgMzsleiD4N3MQ/W6Ol2Zs="
+
+#
+# Build Dependencies
+#
+before_script:
+
+  #
+  # Build Folder
+  #
+  - mkdir build
+  - cd build
+
+  #
+  # Update / Install CMake
+  #
+  - |
+    if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
+      mkdir -p external/cmake
+      pushd external/cmake
+      wget https://cmake.org/files/v3.8/cmake-3.8.0-Linux-x86_64.sh
+      chmod +x cmake-*-Linux-x86_64.sh
+      ./cmake-*-Linux-x86_64.sh --exclude-subdir --skip-license
+      export PATH="${PWD}/bin:$PATH"
+      popd
+    else
+      if ! brew ls --version cmake &>/dev/null; then brew install cmake; fi
+    fi
+
+#
+# Build Matrix
+#
+matrix:
+  include:
+
+  #
+  # Doxygen
+  #
+  - os: linux
+    env:
+      - TEST="Doxygen"
+    addons:
+      apt:
+        packages:
+          - doxygen
+    script:
+      - cd ..
+      - doxygen .doxygen.txt
+      - |
+        if [[ -s doxygen_warnings.txt ]]; then
+          echo "You must fix doxygen before submitting a pull request"
+          echo ""
+          cat doxygen_warnings.txt
+          exit -1
+        fi
+
+  #
+  # Git Check
+  #
+  - os: linux
+    env:
+      - TEST="Git Check"
+    script:
+      - |
+        if [[ -n $(git diff --check HEAD^) ]]; then
+          echo "You must remove whitespace before submitting a pull request"
+          echo ""
+          git diff --check HEAD^
+          exit -1
+        fi
+
+  #
+  # Astyle Format
+  #
+  - os: linux
+    env:
+      - TEST="Astyle Format"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-6
+          - g++-6
+    script:
+      - cmake -DENABLE_ASTYLE=ON -DCMAKE_CXX_COMPILER="g++-6" ..
+      - make
+      - make format
+      - |
+        if [[ -n $(git diff) ]]; then
+          echo "You must run make format before submitting a pull request"
+          echo ""
+          git diff
+          exit -1
+        fi
+
+  #
+  # Clang Tidy
+  #
+  - os: linux
+    env:
+      - TEST="Clang Tidy"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+          - llvm-toolchain-trusty-4.0
+        packages:
+          - clang-4.0
+          - clang-tidy-4.0
+          - gcc-6
+          - g++-6
+    script:
+      - cmake -DENABLE_CLANG_TIDY=ON -DCMAKE_CXX_COMPILER="g++-6" ..
+      - make
+      - make tidy > output.txt
+      - |
+        if [[ -n $(grep "warning: " output.txt) ]] || [[ -n $(grep "error: " output.txt) ]]; then
+            echo "You must pass the clang tidy checks before submitting a pull request"
+            echo ""
+            grep --color -E '^|warning: |error: ' output.txt
+            exit -1;
+        else
+            echo -e "\033[1;32m\xE2\x9C\x93 passed:\033[0m $1";
+        fi
+
+  #
+  # CppCheck
+  #
+  - os: linux
+    env:
+      - TEST="CppCheck"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-6
+          - g++-6
+    script:
+      - cmake -DENABLE_CPPCHECK=ON -DCMAKE_CXX_COMPILER="g++-6" ..
+      - make
+      - make check
+
+  #
+  # Coverity Scan
+  #
+  - os: linux
+    env:
+      - TEST="Coverity Scan"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-6
+          - g++-6
+      coverity_scan:
+        project:
+          name: "ainfosec/ci_helloworld"
+          description: "A simple example of how to setup a complete CI environment for C and C++"
+        notification_email: rianquinn@gmail.com
+        build_command_prepend: "cmake -DCMAKE_CXX_COMPILER=g++-6 .."
+        build_command: "make"
+        branch_pattern: master
+    script:
+      - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+
+  #
+  # Codecov
+  #
+  - os: linux
+    env:
+      - TEST="Codecov"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-6
+          - g++-6
+    script:
+      - cmake -DENABLE_COVERAGE=ON -DCMAKE_CXX_COMPILER="g++-6" ..
+      - make
+      - make test
+      - cd ..
+      - bash <(curl -s https://codecov.io/bash)
+
+  #
+  # Coveralls
+  #
+  - os: linux
+    env:
+      - TEST="Coveralls"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-6
+          - g++-6
+    script:
+      - pip install --user git+git://github.com/eddyxu/cpp-coveralls.git
+      - cmake -DENABLE_COVERAGE=ON -DCMAKE_CXX_COMPILER="g++-6" ..
+      - make
+      - make test
+      - cd ..
+      - |
+        coveralls --build-root build --gcov-options '\-lp' \
+          -e build/external \
+          -e build/include \
+          -e build/CMakeFiles/3.8.0 \
+          -e build/CMakeFiles/feature_tests.c \
+          -e build/CMakeFiles/feature_tests.cxx
+
+  #
+  # Google Address Sanitizer
+  #
+  - os: linux
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-6
+          - g++-6
+    env:
+      - TEST="Google Address Sanitizer"
+    script:
+      - cmake -DENABLE_ASAN=ON -DCMAKE_CXX_COMPILER="g++-6" ..
+      - make
+      - make test
+
+  #
+  # Google Undefined Sanitizer
+  #
+  - os: linux
+    env:
+      - TEST="Google Undefined Sanitizer"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-6
+          - g++-6
+    script:
+      - cmake -DENABLE_USAN=ON -DCMAKE_CXX_COMPILER="g++-6" ..
+      - make
+      - make test
+
+  #
+  # Google Thread Sanitizer
+  #
+  - os: linux
+    env:
+      - TEST="Google Thread Sanitizer"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-6
+          - g++-6
+    script:
+      - cmake -DENABLE_TSAN=ON -DCMAKE_CXX_COMPILER="g++-6" ..
+      - make
+      - make test
+
+  #
+  # Valgrind
+  #
+  - os: linux
+    env:
+      - TEST="Valgrind"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-6
+          - g++-6
+          - valgrind
+    script:
+      - cmake -DCMAKE_CXX_COMPILER="g++-6" ..
+      - make
+      - ctest -T memcheck
+
+  #
+  # G++ 5
+  #
+  - os: linux
+    env:
+      - TEST="G++ 5"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-5
+          - g++-5
+    script:
+      - cmake -DCMAKE_CXX_COMPILER="g++-5" ..
+      - make
+      - make test
+
+  #
+  # G++ 6
+  #
+  - os: linux
+    env:
+      - TEST="G++ 6"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-6
+          - g++-6
+    script:
+      - cmake -DCMAKE_CXX_COMPILER="g++-6" ..
+      - make
+      - make test
+
+  #
+  # Clang 3.8
+  #
+  - os: linux
+    env:
+      - TEST="Clang 3.8"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+          - llvm-toolchain-trusty-4.0
+        packages:
+          - clang-3.8
+          - gcc-6
+          - g++-6
+    script:
+      - cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 ..
+      - make
+      - make test
+
+  #
+  # Clang 3.9
+  #
+  - os: linux
+    env:
+      - TEST="Clang 3.9"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+          - llvm-toolchain-trusty-3.9
+        packages:
+          - clang-3.9
+          - gcc-6
+          - g++-6
+    script:
+      - cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 ..
+      - make
+      - make test
+
+  #
+  # Clang 4.0
+  #
+  - os: linux
+    env:
+      - TEST="Clang 4.0"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+          - llvm-toolchain-trusty-4.0
+        packages:
+          - clang-4.0
+          - gcc-6
+          - g++-6
+    script:
+      - cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 ..
+      - make
+      - make test
+
+  #
+  # XCode 7.3
+  #
+  - os: osx
+    env:
+      - TEST="XCode 7.3"
+    osx_image: xcode7.3
+    script:
+      - cmake ..
+      - make
+      - make test
+
+  #
+  # XCode 8
+  #
+  - os: osx
+    env:
+      - TEST="XCode 8"
+    osx_image: xcode8
+    script:
+      - cmake ..
+      - make
+      - make test
+
+  #
+  # XCode 8.1
+  #
+  - os: osx
+    env:
+      - TEST="XCode 8.1"
+    osx_image: xcode8.1
+    script:
+      - cmake ..
+      - make
+      - make test
+
+  #
+  # XCode 8.2
+  #
+  - os: osx
+    env:
+      - TEST="XCode 8.2"
+    osx_image: xcode8.2
+    script:
+      - cmake ..
+      - make
+      - make test
+
+  #
+  # XCode 8.3
+  #
+  - os: osx
+    env:
+      - TEST="XCode 8.3"
+    osx_image: xcode8.3
+    script:
+      - cmake ..
+      - make
+      - make test
