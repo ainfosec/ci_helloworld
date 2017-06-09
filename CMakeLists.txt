@@ -179,73 +179,120 @@ do_test(consumer)
 # Valgrind
 # ------------------------------------------------------------------------------
 
-find_program(VALGRIND "valgrind")
+if(ENABLE_VALGRIND)
 
-if(VALGRIND STREQUAL "VALGRIND-NOTFOUND")
-    message(FATAL_ERROR "unable to locate valgrind")
+    find_program(VALGRIND "valgrind")
+
+    if(VALGRIND STREQUAL "VALGRIND-NOTFOUND")
+        message(FATAL_ERROR "unable to locate valgrind")
+    endif()
+
+    add_custom_target(
+        valgrind
+        COMMAND ${VALGRIND} --error-exitcode=1 --leak-check=yes ctest
+    )
+
 endif()
-
-add_custom_target(
-    valgrind
-    COMMAND ${VALGRIND} --error-exitcode=1 --leak-check=yes ctest
-)
 
 # ------------------------------------------------------------------------------
 # Astyle
 # ------------------------------------------------------------------------------
 
-list(APPEND ASTYLE_ARGS
-    "--style=1tbs"
-    "--lineend=linux"
-    "--suffix=none"
-    "--pad-oper"
-    "--unpad-paren"
-    "--break-closing-brackets"
-    "--align-pointer=name"
-    "--align-reference=name"
-    "--indent-preproc-define"
-    "--indent-switches"
-    "--indent-col1-comments"
-    "--keep-one-line-statements"
-    "--keep-one-line-blocks"
-    "--pad-header"
-    "--convert-tabs"
-    "--min-conditional-indent=0"
-    "--indent=spaces=4"
-    "--close-templates"
-    "--add-brackets"
-    "--break-after-logical"
-)
+if(ENABLE_ASTYLE)
 
-add_custom_target(
-    format
-    COMMAND ${CMAKE_BINARY_DIR}/bin/astyle ${ASTYLE_ARGS} ${CMAKE_SOURCE_DIR}/include/*.h ${CMAKE_SOURCE_DIR}/src/*.cpp ${CMAKE_SOURCE_DIR}/test/*.cpp
-    COMMENT "running astyle"
-)
+    list(APPEND ASTYLE_ARGS
+        --style=1tbs
+        --lineend=linux
+        --suffix=none
+        --pad-oper
+        --unpad-paren
+        --break-closing-brackets
+        --align-pointer=name
+        --align-reference=name
+        --indent-preproc-define
+        --indent-switches
+        --indent-col1-comments
+        --keep-one-line-statements
+        --keep-one-line-blocks
+        --pad-header
+        --convert-tabs
+        --min-conditional-indent=0
+        --indent=spaces=4
+        --close-templates
+        --add-brackets
+        --break-after-logical
+        ${CMAKE_SOURCE_DIR}/include/*.h
+        ${CMAKE_SOURCE_DIR}/src/*.cpp
+        ${CMAKE_SOURCE_DIR}/test/*.cpp
+    )
+
+    add_custom_target(
+        format
+        COMMAND ${CMAKE_BINARY_DIR}/bin/astyle ${ASTYLE_ARGS}
+        COMMENT "running astyle"
+    )
+
+endif()
 
 # ------------------------------------------------------------------------------
 # Clang Tidy
 # ------------------------------------------------------------------------------
 
-find_program(CLANG_TIDY clang-tidy-4.0)
-find_program(RUN_CLANG_TIDY run-clang-tidy-4.0.py)
+if(ENABLE_CLANG_TIDY)
 
-if(CLANG_TIDY STREQUAL "CLANG_TIDY-NOTFOUND")
-    message(FATAL_ERROR "unable to locate clang-tidy-4.0")
+    find_program(CLANG_TIDY clang-tidy-4.0)
+    find_program(RUN_CLANG_TIDY run-clang-tidy-4.0.py)
+
+    if(CLANG_TIDY STREQUAL "CLANG_TIDY-NOTFOUND")
+        message(FATAL_ERROR "unable to locate clang-tidy-4.0")
+    endif()
+
+    if(RUN_CLANG_TIDY STREQUAL "RUN_CLANG_TIDY-NOTFOUND")
+        message(FATAL_ERROR "unable to locate run-clang-tidy-4.0.py")
+    endif()
+
+    list(APPEND RUN_CLANG_TIDY_ARGS
+        -clang-tidy-binary ${CLANG_TIDY}
+        -header-filter=.*
+        -checks=clan*,cert*,misc*,perf*,cppc*,read*,mode*,-cert-err58-cpp,-misc-noexcept-move-constructor
+    )
+
+    add_custom_target(
+        tidy
+        COMMAND ${RUN_CLANG_TIDY} ${RUN_CLANG_TIDY_ARGS}
+        COMMENT "running clang tidy"
+    )
+
 endif()
 
-if(RUN_CLANG_TIDY STREQUAL "RUN_CLANG_TIDY-NOTFOUND")
-    message(FATAL_ERROR "unable to locate run-clang-tidy-4.0.py")
+# ------------------------------------------------------------------------------
+# CppCheck
+# ------------------------------------------------------------------------------
+
+if(ENABLE_CPPCHECK)
+
+    find_program(CPPCHECK_TIDY cppcheck)
+
+    if(CPPCHECK_TIDY STREQUAL "CPPCHECK_TIDY-NOTFOUND")
+        message(FATAL_ERROR "unable to locate cppcheck")
+    endif()
+
+    list(APPEND CPPCHECK_ARGS
+        --enable=warning,style,performance,portability,unusedFunction
+        --std=c++11
+        --verbose
+        --error-exitcode=1
+        -DMAIN=main
+        -I ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/include/*.h
+        ${CMAKE_SOURCE_DIR}/src/*.cpp
+        ${CMAKE_SOURCE_DIR}/test/*.cpp
+    )
+
+    add_custom_target(
+        cppcheck
+        COMMAND ${CPPCHECK_TIDY} ${CPPCHECK_ARGS}
+        COMMENT "running cppcheck"
+    )
+
 endif()
-
-list(APPEND RUN_CLANG_TIDY_ARGS
-    -clang-tidy-binary ${CLANG_TIDY}
-    -header-filter=.*
-    -checks=clan*,cert*,misc*,perf*,cppc*,read*,mode*,-cert-err58-cpp,-misc-noexcept-move-constructor
-)
-
-add_custom_target(
-    tidy
-    COMMAND ${RUN_CLANG_TIDY} ${RUN_CLANG_TIDY_ARGS}
-    COMMENT "running clang tidy"
-)

@@ -41,7 +41,7 @@ public:
     ///
     /// @param p the producer that this consumer will use.
     ///
-    consumer(gsl::not_null<producer *> p)
+    explicit consumer(gsl::not_null<producer *> p)
     { p->print_msg(); }
 
     /// Default Destructor

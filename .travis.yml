@@ -29,26 +29,11 @@ language: cpp
 dist: trusty
 
 #
-# Compilers
+# Tokens
 #
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-      - llvm-toolchain-trusty-3.8
-      - llvm-toolchain-trusty-3.9
-      - llvm-toolchain-trusty-4.0
-    packages:
-      - clang-3.8
-      - clang-3.9
-      - clang-4.0
-      - clang-tidy-4.0
-      - gcc-5
-      - g++-5
-      - gcc-6
-      - g++-6
-      - doxygen
-      - valgrind
+env:
+  global:
+    secure: "TgRM9CGlY1bAVGOQ9KJ35P5tTCu16aOm4Tf9BW24bwwUmBFawz1sQGOUyJq30OzivtMfLTVi9TfObH2kq5uUFnakX6PkCVwxOZLZPO4yKcum2flTnzX5iZsqGxZb0vDT49QQWvJi1HbKsro5ciEuWVXtV66AX6wetS+fp8A4g+ToQkusr1s5ugYq5yc3HKFcwrlNSPdyn7FETQrrFr8kgO/LiBLMRBpEO1zo9s23h4MjSsBr2u9AvE2QJ2C88Vu5yTI8TWNQY9nZV3c5lgwSUXk+y+IZQTmW0LXALglNKbCRftxgjJM6zypw0h9iXSGc+3rVkuVwQfOrFdxyAOr2jBiKbFYB3mxNNc10XZtvRnwn+eEcsXwQ4Hi9jhqN13LciZcoJpKnL9fQp3dUeBehYkCyUQnK6oRxS/ceYQJB05y9IpZq/XnjIL9uXIie7kYtRMNVwVgLmr+cMt5QvJgkiLAhAhLjwhmEt7KX+UQ4x4jDxMJ8NV0azEG4nFr6HvTWHc9PgPjM83HxX+7CGAZy5da6zmZe+FOTlG6lOwCDROqDmmlGPR9e7hZ+JtaMHRZlCN90jiJ7Shszrnwmjv0CJ0WHbCSGreRl00039GuwPNRvqgsgYxrVfYQ0Z6CbA9E1qlluwV02KWJdMk1pcm//KdgMzsleiD4N3MQ/W6Ol2Zs="
 
 #
 # Update Build Environment
@@ -85,15 +70,6 @@ before_script:
 #
 matrix:
   include:
-
-
-# Missing
-#  - Coverity Scan
-#  - CppCheck
-
-
-
-
 
   #
   # Doxygen
@@ -145,7 +121,7 @@ matrix:
           - gcc-6
           - g++-6
     script:
-      - cmake -DCMAKE_CXX_COMPILER="g++-6" ..
+      - cmake -DENABLE_ASTYLE=ON -DCMAKE_CXX_COMPILER="g++-6" ..
       - make
       - make format
       - |
@@ -173,7 +149,7 @@ matrix:
           - gcc-6
           - g++-6
     script:
-      - cmake -DCMAKE_CXX_COMPILER="g++-6" ..
+      - cmake -DENABLE_CLANG_TIDY=ON -DCMAKE_CXX_COMPILER="g++-6" ..
       - make
       - make tidy > output.txt
       - |
@@ -185,6 +161,50 @@ matrix:
         else
             echo -e "\033[1;32m\xE2\x9C\x93 passed:\033[0m $1";
         fi
+
+  #
+  # Cpp Check
+  #
+  - os: linux
+    env:
+      - TEST="CppCheck"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - cppcheck
+          - gcc-6
+          - g++-6
+    script:
+      - cmake -DENABLE_CPPCHECK=ON -DCMAKE_CXX_COMPILER="g++-6" ..
+      - make
+      - make cppcheck
+
+  #
+  # Coverity Scan
+  #
+  - os: linux
+    env:
+      - TEST="CppCheck"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-6
+          - g++-6
+      coverity_scan:
+        project:
+          name: "ainfosec/ci_helloworld"
+          description: "A simple example of how to setup a complete CI environment for C and C++"
+        notification_email: rianquinn@gmail.com
+        build_command_prepend: "cmake -DCMAKE_CXX_COMPILER=g++-6 .."
+        build_command:   "make"
+        branch_pattern: master
+    script:
+      - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+
   #
   # Codecov
   #
@@ -277,7 +297,7 @@ matrix:
           - g++-6
           - valgrind
     script:
-      - cmake -DCMAKE_CXX_COMPILER="g++-6" ..
+      - cmake -DENABLE_VALGRIND=ON -DCMAKE_CXX_COMPILER="g++-6" ..
       - make
       - ctest -T memCheck
 
