@@ -25,6 +25,8 @@
 #ifndef PRODUCER_H
 #define PRODUCER_H
 
+#include <iostream>
+
 /// Producer
 ///
 /// A simple example of a producer that is capable of being mocked while
@@ -51,7 +53,8 @@ public:
     /// - the main application defines VIRTUAL=
     /// - the unit test recompiles this source defining VIRTUAL=virtual
     ///
-    VIRTUAL void print_msg();
+    VIRTUAL void print_msg()
+    { std::cout << "hello world\n"; }
 
 public:
 

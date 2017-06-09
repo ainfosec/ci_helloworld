@@ -163,30 +163,11 @@ matrix:
         fi
 
   #
-  # Cpp Check
-  #
-  - os: linux
-    env:
-      - TEST="CppCheck"
-    addons:
-      apt:
-        sources:
-          - ubuntu-toolchain-r-test
-        packages:
-          - cppcheck
-          - gcc-6
-          - g++-6
-    script:
-      - cmake -DENABLE_CPPCHECK=ON -DCMAKE_CXX_COMPILER="g++-6" ..
-      - make
-      - make cppcheck
-
-  #
   # Coverity Scan
   #
   - os: linux
     env:
-      - TEST="CppCheck"
+      - TEST="Coverity Scan"
     addons:
       apt:
         sources:
@@ -200,7 +181,7 @@ matrix:
           description: "A simple example of how to setup a complete CI environment for C and C++"
         notification_email: rianquinn@gmail.com
         build_command_prepend: "cmake -DCMAKE_CXX_COMPILER=g++-6 .."
-        build_command:   "make"
+        build_command: "make"
         branch_pattern: master
     script:
       - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-

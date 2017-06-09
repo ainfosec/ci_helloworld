@@ -130,7 +130,7 @@ ExternalProject_Add(
 # Main Executable
 # ------------------------------------------------------------------------------
 
-add_executable(ci_helloworld src/main.cpp src/producer.cpp)
+add_executable(ci_helloworld src/main.cpp)
 add_dependencies(ci_helloworld gsl)
 target_compile_definitions(ci_helloworld PRIVATE VIRTUAL= MAIN=main)
 
@@ -141,22 +141,31 @@ target_compile_definitions(ci_helloworld PRIVATE VIRTUAL= MAIN=main)
 include(CTest)
 
 if(ENABLE_COVERAGE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftest-coverage")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
 endif()
 
 if(ENABLE_ASAN)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O1 -fuse-ld=gold -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fuse-ld=gold")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=leak")
 endif()
 
 if(ENABLE_USAN)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fuse-ld=gold -fsanitize=undefined")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fuse-ld=gold")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined")
 endif()
 
 add_library(test_catch STATIC test/test.cpp)
 add_dependencies(test_catch catch)
 
-add_library(business_logic STATIC src/main.cpp src/producer.cpp)
+add_library(business_logic STATIC src/main.cpp)
 add_dependencies(business_logic gsl)
 target_compile_definitions(business_logic PRIVATE VIRTUAL=virtual MAIN=unittest_main)
 
@@ -187,9 +196,15 @@ if(ENABLE_VALGRIND)
         message(FATAL_ERROR "unable to locate valgrind")
     endif()
 
+    list(APPEND VALGRIND_ARGS
+        --error-exitcode=1
+        --leak-check=yes
+        ctest
+    )
+
     add_custom_target(
         valgrind
-        COMMAND ${VALGRIND} --error-exitcode=1 --leak-check=yes ctest
+        COMMAND ${VALGRIND} ${VALGRIND_ARGS}
     )
 
 endif()
@@ -261,38 +276,6 @@ if(ENABLE_CLANG_TIDY)
         tidy
         COMMAND ${RUN_CLANG_TIDY} ${RUN_CLANG_TIDY_ARGS}
         COMMENT "running clang tidy"
-    )
-
-endif()
-
-# ------------------------------------------------------------------------------
-# CppCheck
-# ------------------------------------------------------------------------------
-
-if(ENABLE_CPPCHECK)
-
-    find_program(CPPCHECK_TIDY cppcheck)
-
-    if(CPPCHECK_TIDY STREQUAL "CPPCHECK_TIDY-NOTFOUND")
-        message(FATAL_ERROR "unable to locate cppcheck")
-    endif()
-
-    list(APPEND CPPCHECK_ARGS
-        --enable=warning,style,performance,portability,unusedFunction
-        --std=c++11
-        --verbose
-        --error-exitcode=1
-        -DMAIN=main
-        -I ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/include/*.h
-        ${CMAKE_SOURCE_DIR}/src/*.cpp
-        ${CMAKE_SOURCE_DIR}/test/*.cpp
-    )
-
-    add_custom_target(
-        cppcheck
-        COMMAND ${CPPCHECK_TIDY} ${CPPCHECK_ARGS}
-        COMMENT "running cppcheck"
     )
 
 endif()
