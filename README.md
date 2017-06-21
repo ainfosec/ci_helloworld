@@ -16,8 +16,7 @@ This repo provides a simple example for how to setup various CI services as
 well as integrating analysis tools into these services. These tools should be
 used as part of a comprehensive Software Development Process (SDP) and can also
 be used as as starting template for any C or C++ application. The following CI
-tools are used, providing testing support for Windows, Cygwin, Linux
-(Ubuntu 14.04) and macOS (10.11 and 10.12)
+tools are used, providing testing support for Windows, Cygwin, Linux and macOS
 
 - [Travis CI](https://travis-ci.org/)
 - [AppVeyor](https://www.appveyor.com/)
