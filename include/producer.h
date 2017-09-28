@@ -27,6 +27,10 @@
 
 #include <iostream>
 
+#ifndef STR
+#define STR "hello world"
+#endif
+
 /// Producer
 ///
 /// A simple example of a producer that is capable of being mocked while
@@ -54,7 +58,14 @@ public:
     /// - the unit test recompiles this source defining VIRTUAL=virtual
     ///
     VIRTUAL void print_msg()
-    { std::cout << "hello world\n"; }
+    {       
+        auto buf = new char[ 64 ];
+        if ( STR!=0 )        
+            {
+            sprintf( buf, "msg: %s\n", STR );
+            std::cout << buf;
+            }
+    }
 
 public:
 
