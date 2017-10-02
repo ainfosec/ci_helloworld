@@ -45,6 +45,7 @@ of their SDP:
 - [Bareflank Hypervisor](https://github.com/Bareflank/hypervisor)
 - [JSON](https://github.com/nlohmann/json)
 - [Neovim](https://github.com/neovim/neovim)
+- [GSL](https://github.com/Microsoft/GSL)
 
 ## Dependencies
 
