@@ -235,7 +235,7 @@ matrix:
           - gcc-6
           - g++-6
     script:
-      - pip install --user git+git://github.com/eddyxu/cpp-coveralls.git
+      - pip install --upgrade --user git+git://github.com/eddyxu/cpp-coveralls.git
       - cmake -DENABLE_COVERAGE=ON -DCMAKE_CXX_COMPILER="g++-6" ..
       - make
       - make test
