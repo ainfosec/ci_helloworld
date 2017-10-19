@@ -23,7 +23,7 @@ tools are used, providing testing support for Windows, Cygwin, Linux and macOS
 
 The following checks are performed:
 
-- [Doxygen](www.doxygen.org)
+- [Doxygen](http://www.doxygen.org)
 - [Git Check](https://git-scm.com/docs/git-diff)
 - [Astyle](http://astyle.sourceforge.net/)
 - [Clang Tidy](http://clang.llvm.org/extra/clang-tidy/)
