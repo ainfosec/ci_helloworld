@@ -59,7 +59,7 @@ before_script:
       export PATH="${PWD}/bin:$PATH"
       popd
     else
-      if ! brew ls --version cmake &>/dev/null; then brew install cmake; fi
+      if ! brew ls --version cmake &>/dev/null; then brew update; brew install cmake; fi
     fi
 
 #
