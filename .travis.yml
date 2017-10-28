@@ -476,3 +476,19 @@ matrix:
       - cmake ..
       - make
       - make test
+  #
+  # clang 5.0 --analyze
+  #
+  - os: linux
+    env:
+      - TEST="Clang 5.0 --analyze"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+          - llvm-toolchain-trusty-5.0
+        packages:
+          - clang-5.0
+    script:
+      - cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 ..
+      - scan-build-5.0 --status-bugs make
