@@ -21,14 +21,14 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-
+//including library files
 #include <hippomocks.h>
 #include <catch/catch.hpp>
 
 #include <consumer.h>
 
 #ifdef _HIPPOMOCKS__ENABLE_CFUNC_MOCKING_SUPPORT
-
+//defining the test case for failure
 TEST_CASE("consumer: failure")
 {
     MockRepository mocks;
@@ -38,6 +38,7 @@ TEST_CASE("consumer: failure")
 
     CHECK_THROWS(consumer{p});
 }
+//defining the test case for success
 
 TEST_CASE("consumer: success")
 {
