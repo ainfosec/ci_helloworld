@@ -21,12 +21,13 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-
+//includeing library files
 #include <catch/catch.hpp>
-
+//main function
 int unittest_main(int argc, char *argv[]);
-
+//running test case
 TEST_CASE("main: success")
 {
+    //processing function
     CHECK_NOTHROW(unittest_main(0, nullptr));
 }
