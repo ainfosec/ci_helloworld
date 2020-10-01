@@ -12,7 +12,7 @@
 
 ## Description
 
-This repo provides a simple example for how to setup various CI services as
+This repository provides a simple and most helpful example for how to setup various CI services as
 well as integrating analysis tools into these services. These tools should be
 used as part of a comprehensive Software Development Process (SDP) and can also
 be used as a starting template for any C or C++ application. The following CI
