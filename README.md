@@ -107,7 +107,7 @@ nmake
 nmake test
 ```
 
-#### Visual Studio 2017 (MSBuild)
+#### Visual Studio 2020 (MSBuild)
 ```
 git clone https://github.com/ainfosec/ci_helloworld.git
 
@@ -602,3 +602,5 @@ using ctest, enabling the memcheck mode.
 ## License
 
 This project is licensed under the MIT License.
+
+        ##Thanks You ###
