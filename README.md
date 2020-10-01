@@ -52,6 +52,11 @@ of their SDP:
 Although this repo can be made to run on most systems, the following are the
 supported platforms and their dependencies:
 
+### Ubuntu 20.04:
+
+sudo apt update```
+sudo apt install git
+
 #### Ubuntu 16.10 (or Higher):
 ```
 sudo apt-get install git build-essential cmake
